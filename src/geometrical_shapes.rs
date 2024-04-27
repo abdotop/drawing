@@ -4,6 +4,7 @@ use raster::{Color, Image};
 
 pub trait Drawable {
     fn draw(&self, image: &mut Image);
+    fn color(&self) -> Color;
 }
 
 pub trait Displayable {
@@ -32,9 +33,11 @@ impl Point {
 
 impl Drawable for Point {
     fn draw(&self, image: &mut Image) {
-        image
-            .set_pixel(self.x, self.y, Color::rgb(255, 255, 255))
-            .unwrap();
+        image.set_pixel(self.x, self.y, self.color()).unwrap();
+    }
+
+    fn color(&self) -> Color {
+        Color::rgb(255, 255, 255)
     }
 }
 
@@ -62,39 +65,27 @@ impl Line {
 
 impl Drawable for Line {
     fn draw(&self, image: &mut Image) {
-        let mut x0 = self.start.x;
-        let mut y0 = self.start.y;
-        let x1 = self.end.x;
-        let y1 = self.end.y;
+        let x0 = self.start.x as f32;
+        let y0 = self.start.y as f32;
+        let x1 = self.end.x as f32;
+        let y1 = self.end.y as f32;
 
-        let dx = i32::abs(x1 - x0);
-        let dy = i32::abs(y1 - y0);
+        let dx = x1 - x0;
+        let dy = y1 - y0;
 
-        let sx = if x0 < x1 { 1 } else { -1 };
-        let sy = if y0 < y1 { 1 } else { -1 };
+        let steps = dx.abs().max(dy.abs()) as i32;
 
-        let mut err = if dx > dy { dx } else { -dy } / 2;
-        let mut err2;
+        let color = self.color();
 
-        loop {
-            image.set_pixel(x0, y0, Color::rgb(255, 255, 255)).unwrap();
-
-            if x0 == x1 && y0 == y1 {
-                break;
-            }
-
-            err2 = err;
-
-            if err2 > -dx {
-                err -= dy;
-                x0 += sx;
-            }
-
-            if err2 < dy {
-                err += dx;
-                y0 += sy;
-            }
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let x = (x0 + dx * t) as i32;
+            let y = (y0 + dy * t) as i32;
+            image.set_pixel(x, y, color.clone()).unwrap();
         }
+    }
+    fn color(&self) -> Color {
+        Color::rgb(255, 255, 255)
     }
 }
 
@@ -124,6 +115,9 @@ impl Drawable for Triangle {
         line1.draw(image);
         line2.draw(image);
         line3.draw(image);
+    }
+    fn color(&self) -> Color {
+        Color::rgb(255, 255, 255)
     }
 }
 
@@ -162,6 +156,9 @@ impl Drawable for Rectangle {
         line3.draw(image);
         line4.draw(image);
     }
+    fn color(&self) -> Color {
+        Color::rgb(255, 255, 255)
+    }
 }
 
 pub struct Circle {
@@ -183,7 +180,7 @@ impl Drawable for Circle {
         let mut x = 0;
         let mut y = self.radius;
         let mut d = 3 - 2 * self.radius;
-        let color = random_color();
+        let color = self.color();
 
         while y >= x {
             let points = [
@@ -199,7 +196,7 @@ impl Drawable for Circle {
 
             for &(x, y) in &points {
                 if x >= 0 && x < image.width && y >= 0 && y < image.height {
-                    image.set_pixel(x , y , color.clone()).unwrap();
+                    image.set_pixel(x, y, color.clone()).unwrap();
                 }
             }
 
@@ -213,11 +210,14 @@ impl Drawable for Circle {
             }
         }
     }
-}
-
-fn random_color() -> Color {
-    let mut rng = rand::thread_rng();
-    Color::rgb(rng.gen_range(0..255), rng.gen_range(0..255), rng.gen_range(0..255))
+    fn color(&self) -> Color {
+        let mut rng = rand::thread_rng();
+        Color::rgb(
+            rng.gen_range(0..255),
+            rng.gen_range(0..255),
+            rng.gen_range(0..255),
+        )
+    }
 }
 
 #[cfg(test)]
@@ -271,7 +271,12 @@ mod tests {
         let rectangle = Rectangle::new(&Point::new(0, 0), &Point::new(99, 99));
         rectangle.draw(&mut image);
         // Check that the pixels at the corners are not black
-        for &point in &[Point::new(0, 0), Point::new(99, 0), Point::new(0, 99), Point::new(99, 99)] {
+        for &point in &[
+            Point::new(0, 0),
+            Point::new(99, 0),
+            Point::new(0, 99),
+            Point::new(99, 99),
+        ] {
             let pixel_color = image.get_pixel(point.x, point.y).unwrap();
             let black = Color::rgb(0, 0, 0);
             assert_ne!(pixel_color.r, black.r);
