@@ -251,6 +251,14 @@ impl Drawable for Pentagon {
         line4.draw(image);
         line5.draw(image);
     }
+    fn color(&self) -> Color {
+        let mut rng = rand::thread_rng();
+        Color::rgb(
+            rng.gen_range(0..255),
+            rng.gen_range(0..255),
+            rng.gen_range(0..255),
+        )
+    }
 }
 
 #[cfg(test)]
