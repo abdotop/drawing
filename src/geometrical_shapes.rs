@@ -219,6 +219,39 @@ fn random_color() -> Color {
     let mut rng = rand::thread_rng();
     Color::rgb(rng.gen_range(0..255), rng.gen_range(0..255), rng.gen_range(0..255))
 }
+struct Pentagon {
+    p1: Point,
+    p2: Point,
+    p3: Point,
+    p4: Point,
+    p5: Point,
+}
+impl Pentagon {
+    pub fn new(p1: &Point, p2: &Point, p3: &Point, p4:&Point,p5:&Point) -> Self {
+        Self {
+            p1: *p1,
+            p2: *p2,
+            p3: *p3,
+            p4: *p4,
+            p5: *p5,
+        }
+    }
+}
+impl Drawable for Pentagon {
+    fn draw(&self, image: &mut Image) {
+        let line1 = Line::new(&self.p1, &self.p2);
+        let line2 = Line::new(&self.p2, &self.p3);
+        let line3 = Line::new(&self.p3, &self.p4);
+        let line4 = Line::new(&self.p4, &self.p5);
+        let line5 = Line::new(&self.p5, &self.p1);
+
+        line1.draw(image);
+        line2.draw(image);
+        line3.draw(image);
+        line4.draw(image);
+        line5.draw(image);
+    }
+}
 
 #[cfg(test)]
 mod tests {
